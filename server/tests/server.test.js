@@ -1,5 +1,6 @@
 const expect = require('expect');
 const request = require('supertest');
+const {ObjectID}=require('mongodb');
 
 const {
   app
@@ -36,5 +37,17 @@ describe('POST /todos', () => {
         // });
         done();
       });
+  });
+});
+
+describe('GET /getTodos/:id',()=>{
+  it('should be return todo doc',(done)=>{
+    request(app)
+    .get(`/todos/${todos[0]._id.toHexString()}`)
+    .expect(200)
+    .expect((res)=>{
+      expect(res.body.todo.text).toBe('sth');
+    })
+    .end(done);
   });
 });

@@ -1,6 +1,8 @@
 var express = require('express');
 var bodyParser = require('body-parser');
-const {ObjectID}=require('mongodb');
+const {
+  ObjectID
+} = require('mongodb');
 
 var {
   mongoose
@@ -13,6 +15,8 @@ var {
 } = require('./models/user');
 
 var app = express();
+const port = process.env.PORT || 3000;
+
 app.use(bodyParser.json());
 
 // A POST request for creating new todo
@@ -55,8 +59,8 @@ app.get('/getTodos/:id', (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log('Started on port 3000.');
+app.listen(port, () => {
+  console.log(`'Started on port ${port}`);
 });
 
 module.exports = {
