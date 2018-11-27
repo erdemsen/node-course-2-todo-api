@@ -51,3 +51,13 @@ describe('GET /getTodos/:id',()=>{
     .end(done);
   });
 });
+
+describe('DELETE /deleteTodo/:id',()=>{
+  it('should be return todo doc',(done)=>{
+
+  });
+  it('should return 404 if todo not found',(done)=>{
+
+  });
+  it('should return 404 id id is not valid');
+});
