@@ -24,9 +24,10 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
 // A POST request for creating new todo
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate, (req, res) => {
   var todo = new ToDo({
-    text: req.body.text
+    text: req.body.text,
+    _creator: req.user._id
   });
   //todo is a mongoose model so we can use .save method
   todo.save().then((doc) => {
@@ -36,22 +37,27 @@ app.post('/todos', (req, res) => {
   });
 });
 
-// GET request for getting all todos
-// app.get('/getTodos', (req, res) => {
-//   ToDo.find({}).then((doc) => {
-//     res.send(doc);
-//   }, (err) => {
-//     res.send(e);
-//   });
-// });
+//GET request for getting all todos
+app.get('/getTodos', authenticate, (req, res) => {
+  ToDo.find({
+    _creator: req.user._id
+  }).then((doc) => {
+    res.send(doc);
+  }, (err) => {
+    res.send(e);
+  });
+});
 
 // GET request for a special ToDo
-app.get('/getTodos/:id', (req, res) => {
+app.get('/getTodos/:id', authenticate, (req, res) => {
   var id = req.params.id;
   if (!ObjectID.isValid(id)) {
     res.status(404).send('ID is not valid');
   } else {
-    ToDo.findById(id).then((doc) => {
+    ToDo.findOne({
+      _id: id,
+      _creator: req.user._id
+    }).then((doc) => {
       if (doc)
         res.send(doc);
       else {
@@ -63,12 +69,15 @@ app.get('/getTodos/:id', (req, res) => {
   }
 });
 
-app.delete('/deleteTodo/:id', (req, res) => {
+app.delete('/deleteTodo/:id', authenticate, (req, res) => {
   var id = req.params.id;
   if (!ObjectID.isValid(id)) {
     res.status(404).send('ID is not valid');
   } else {
-    ToDo.findByIdAndRemove(id).then((doc) => {
+    ToDo.findOneAndRemove({
+      _id: id,
+      _creator: req.user._id
+    }).then((doc) => {
       if (doc)
         res.send(doc);
       else {
@@ -80,7 +89,7 @@ app.delete('/deleteTodo/:id', (req, res) => {
   }
 });
 
-app.patch('/todos/:id', (req, res) => {
+app.patch('/todos/:id', authenticate, (req, res) => {
   var id = req.params.id;
   var body = _.pick(req.body, ['text', 'completed']); //dönen jsondan belirtilen attr varsa alır
 
@@ -88,7 +97,10 @@ app.patch('/todos/:id', (req, res) => {
     res.status(404).send('ID is not valid');
   }
   // fınd and updates by id set parameter as request values {new:true} means return updated record
-  ToDo.findByIdAndUpdate(id, {
+  ToDo.findOneAndUpdate({
+    _id: id,
+    _creator: req.user._id
+  }, {
     $set: body
   }, {
     new: true
@@ -120,6 +132,26 @@ app.post('/users', (req, res) => {
 
 app.get('/users/me', authenticate, (req, res) => {
   res.send(req.user);
+});
+
+app.post('/users/login', (req, res) => {
+  var body = _.pick(req.body, ['email', 'password']);
+
+  User.findByCredentials(body.email, body.password).then((user) => {
+    return user.generateAuthToken().then((token) => {
+      res.header('x-auth', token).send(user);
+    });
+  }).catch((e) => {
+    res.status(400).send();
+  });
+});
+//authenticate middleware ini kullanarak current user in bilgilerine erişebiliriz
+app.delete('/users/me/token', authenticate, (req, res) => {
+  req.user.removeToken(req.token).then(() => {
+    res.status(200).send();
+  }, () => {
+    res.status(400).send();
+  });
 });
 
 app.listen(port, () => {
